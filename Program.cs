@@ -1,25 +1,18 @@
+using Platform;
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.Configure<RouteOptions>(opts => {
+	opts.ConstraintMap.Add("countryName",
+	typeof(CountryRouteConstraint));
+});
 var app = builder.Build();
-
-app.Use(async (context, next) => {
-	await next();
+app.Map("{number:int}", async context => {
+	await context.Response.WriteAsync("Routed to the int endpoint");
+}).Add(b => ((RouteEndpointBuilder)b).Order = 1);
+app.Map("{number:double}", async context => {
 	await context.Response
-	.WriteAsync($"\nStatus Code: {context.Response.StatusCode}");
+	.WriteAsync("Routed to the double endpoint");
+}).Add(b => ((RouteEndpointBuilder)b).Order = 2);
+app.MapFallback(async context => {
+	await context.Response.WriteAsync("Routed to fallback endpoint");
 });
-app.Use(async (context, next) => {
-	if (context.Request.Path == "/short")
-	{
-		await context.Response
-		.WriteAsync($"Request Short Circuited");
-	}
-	else
-	{
-		await next();
-	}
-});
-
-app.UseMiddleware<Platform.QueryStringMiddleWare>();
-
-app.MapGet("/", () => "Hello World!");
-
 app.Run();
