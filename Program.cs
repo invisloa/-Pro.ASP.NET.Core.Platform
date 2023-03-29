@@ -1,23 +1,23 @@
-using Platform;
 using Platform.Services;
 var builder = WebApplication.CreateBuilder(args);
-
-builder.Services.AddTransient<IResponseFormatter, GuidService>();
-
+builder.Services.AddSingleton(typeof(ICollection<>), typeof(List<>));
 var app = builder.Build();
-app.UseMiddleware<WeatherMiddleware>();
-
-app.MapGet("middleware/function", async (HttpContext context,
-IResponseFormatter formatter) => {
-	await formatter.Format(context, "Middleware Function: It is snowing in Chicago");
+app.MapGet("string", async context => {
+	ICollection<string> collection
+	= context.RequestServices.GetRequiredService<ICollection<string>>();
+	collection.Add($"Request: {DateTime.Now.ToLongTimeString()}");
+	foreach (string str in collection)
+	{
+		await context.Response.WriteAsync($"String: {str}\n");
+	}
 });
-
-//app.MapWeather("endpoint/class");
-app.MapEndpoint<WeatherEndpoint>("endpoint/class");
-
-app.MapGet("endpoint/function", async (HttpContext context,
-IResponseFormatter formatter) => {
-	await formatter.Format(context, "Endpoint Function: It is sunny in LA");
+app.MapGet("int", async context => {
+ICollection<int> collection
+= context.RequestServices.GetRequiredService<ICollection<int>>();
+collection.Add(collection.Count() + 1);
+foreach (int val in collection)
+{
+	await context.Response.WriteAsync($"Int: {val}\n");
+}
 });
-
 app.Run();
